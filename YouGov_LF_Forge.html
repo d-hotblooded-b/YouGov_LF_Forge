@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Least Fill Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #FF4785 0%, #E91E8C 35%, #B84ACA 70%, #6B8DD6 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: move-bg 20s linear infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes move-bg {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .logo-text {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #FF4785 0%, #E91E8C 50%, #B84ACA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 700;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .forge-title {
+            background: linear-gradient(135deg, #FF4785 0%, #ff6b00 50%, #ffd700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: forgeGlow 2s ease-in-out infinite;
+            position: relative;
+            display: inline-block;
+        }
+        
+        .forge-title::after {
+            content: '🔥';
+            position: absolute;
+            right: -35px;
+            top: -5px;
+            font-size: 24px;
+            animation: flicker 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes forgeGlow {
+            0%, 100% {
+                filter: brightness(1) drop-shadow(0 0 5px rgba(255, 71, 133, 0.5));
+            }
+            50% {
+                filter: brightness(1.3) drop-shadow(0 0 15px rgba(255, 107, 0, 0.8));
+            }
+        }
+        
+        @keyframes flicker {
+            0%, 100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+            25% {
+                transform: scale(1.1) translateY(-2px);
+                opacity: 0.9;
+            }
+            50% {
+                transform: scale(0.95) translateY(1px);
+                opacity: 1;
+            }
+            75% {
+                transform: scale(1.05) translateY(-1px);
+                opacity: 0.95;
+            }
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 15px;
+        }
+        
+        .main-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 30px;
+        }
+        
+        .form-section {
+            padding: 40px;
+        }
+        
+        .form-grid {
+            display: grid;
+            gap: 25px;
+        }
+        
+        .form-group {
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2d3748;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        label::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: linear-gradient(135deg, #FF4785, #E91E8C);
+            border-radius: 2px;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: white;
+        }
+        
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #FF4785;
+            box-shadow: 0 0 0 3px rgba(255, 71, 133, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 140px;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+        }
+        
+        .helper-text {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .helper-text::before {
+            content: 'i';
+            font-size: 11px;
+            font-weight: bold;
+            font-style: italic;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #FF4785, #E91E8C);
+            color: white;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            margin-top: 35px;
+        }
+        
+        button {
+            padding: 16px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        button:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-generate {
+            background: linear-gradient(135deg, #FF4785 0%, #E91E8C 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 71, 133, 0.3);
+        }
+        
+        .btn-generate:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 71, 133, 0.4);
+        }
+        
+        .btn-reset {
+            background: #f7fafc;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .btn-reset:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+        
+        .output-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 40px;
+            animation: slideUp 0.4s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .output-section.active {
+            display: block;
+        }
+        
+        .output-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .output-header h3 {
+            color: #2d3748;
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .output-header h3::before {
+            content: '✨';
+            font-size: 24px;
+        }
+        
+        .btn-copy {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+        }
+        
+        .btn-copy:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(72, 187, 120, 0.4);
+        }
+        
+        .btn-copy.copied {
+            background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
+        }
+        
+        .output-code {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 24px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.7;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .radio-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 12px;
+        }
+        
+        .radio-option {
+            position: relative;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .radio-option:hover {
+            border-color: #FF4785;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 71, 133, 0.1);
+        }
+        
+        .radio-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+        
+        .radio-option input[type="radio"]:checked + label::before {
+            background: linear-gradient(135deg, #FF4785, #E91E8C);
+            border-color: #FF4785;
+        }
+        
+        .radio-option label {
+            margin: 0;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2d3748;
+        }
+        
+        .radio-option label::before {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid #cbd5e0;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+        
+        .radio-option input[type="radio"]:checked ~ label::before {
+            background: linear-gradient(135deg, #FF4785, #E91E8C);
+            border-color: #FF4785;
+            box-shadow: 0 0 0 3px rgba(255, 71, 133, 0.2);
+        }
+        
+        .priority-section {
+            display: none;
+            margin-top: 25px;
+            padding: 25px;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-radius: 12px;
+            border-left: 4px solid #f59e0b;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+        }
+        
+        .priority-section.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 500px;
+            }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 20px 15px;
+            }
+            
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .radio-group {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-section, .output-section {
+                padding: 25px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .logo-text {
+                font-size: 28px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-container">
+                <div class="logo-text">YouGov</div>
+            </div>
+            <h1><span class="forge-title">Least Fill Forge</span></h1>
+            <p>Generate Gryphon least fill code with ease</p>
+        </div>
+        
+        <div class="main-card">
+            <div class="form-section">
+                <form id="lfForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="lfType">Least Fill Type</label>
+                            <div class="radio-group">
+                                <div class="radio-option">
+                                    <input type="radio" id="normalLF" name="lfType" value="normal" checked>
+                                    <label for="normalLF">Normal Least Fill</label>
+                                </div>
+                                <div class="radio-option">
+                                    <input type="radio" id="priorityLF" name="lfType" value="priority">
+                                    <label for="priorityLF">Priority Least Fill</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="numBrands">Number of Brands Required</label>
+                            <input type="number" id="numBrands" min="1" required placeholder="e.g., 3">
+                            <div class="helper-text">Enter the number of brands needed from the least fill</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="brandList">Brand List</label>
+                            <textarea id="brandList" required placeholder="<1> Google&#10;<2> Yahoo&#10;<3> Claude&#10;<4> Firefox"></textarea>
+                            <div class="helper-text">Enter brands in the format: &lt;code&gt; Brand Name (one per line)</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="counterReset">Counter Reset Value</label>
+                            <input type="text" id="counterReset" value="0" required>
+                            <div class="helper-text">Add one to this value to reset counter (default: 0)</div>
+                        </div>
+                        
+                        <div id="prioritySection" class="priority-section">
+                            <div class="form-group">
+                                <label for="priorityBrands">Priority Brand Codes</label>
+                                <input type="text" id="priorityBrands" placeholder="e.g., 1,4,6,10">
+                                <div class="helper-text">Enter comma-separated brand codes for priority (leave blank if no priority brands)</div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="sourceQuestion">Source Question Variable</label>
+                                <input type="text" id="sourceQuestion" placeholder="e.g., Q1">
+                                <div class="helper-text">The question variable containing selected brands</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="submit" class="btn-generate">Generate Code</button>
+                        <button type="reset" class="btn-reset">Reset Form</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div id="outputSection" class="output-section">
+            <div class="output-header">
+                <h3>Generated Code</h3>
+                <button id="copyBtn" class="btn-copy">
+                    <span id="copyIcon">📋</span>
+                    <span id="copyText">Copy Code</span>
+                </button>
+            </div>
+            <div class="output-code" id="outputCode"></div>
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('lfForm');
+        const outputSection = document.getElementById('outputSection');
+        const outputCode = document.getElementById('outputCode');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyText = document.getElementById('copyText');
+        const copyIcon = document.getElementById('copyIcon');
+        const prioritySection = document.getElementById('prioritySection');
+        const lfTypeRadios = document.querySelectorAll('input[name="lfType"]');
+        
+        // Toggle priority section
+        lfTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (e.target.value === 'priority') {
+                    prioritySection.classList.add('active');
+                } else {
+                    prioritySection.classList.remove('active');
+                }
+            });
+        });
+        
+        // Parse brand list
+        function parseBrandList(brandListText) {
+            const lines = brandListText.trim().split('\n');
+            const brands = [];
+            const codes = [];
+            
+            lines.forEach(line => {
+                const match = line.match(/<(\d+)>\s*(.+)/);
+                if (match) {
+                    codes.push(match[1]);
+                    brands.push({ code: match[1], name: match[2].trim() });
+                }
+            });
+            
+            return { brands, codes };
+        }
+        
+        // Generate Normal LF code
+        function generateNormalLF(numBrands, brandData, counterReset) {
+            const { brands, codes } = brandData;
+            const eligibleList = codes.join(',');
+            const brandOptions = brands.map(b => `<${b.code}>  ${b.name}`).join('\n');
+            
+            return `######## least filled
+ 
+{page pSetupLF}
+ 
+{
+counter_reset = "${counterReset}"  ##Add one to this to reset counter
+ 
+counter_name = "counter_" + str(gryphon.interview_type) + counter_reset
+ 
+nr_max = ${numBrands}            #number of needed brands
+ 
+counter_vals = int[]
+ 
+eligible  = int[]     #list with the eligible  brands
+ 
+selected = int[]      #chosen brands
+ 
+eligible  = [${eligibleList}]  #here you will build the eligible list
+ 
+eligible = random_shuffle(eligible) #randomize the eligible list
+ 
+for x in eligible : counter_vals.append(counter_value(counter_name,x))
+ 
+selected = reorder(eligible,bottom_n(counter_vals,nr_max))   #reorder is a function that will return the first nr_max values in ascending order from eligible list based on the counters
+ 
+q_chosen_brands.copy(selected)
+}
+ 
+{end page pSetupLF}
+ 
+[q_chosen_brands if 0] {multiple} Chosen brands:
+${brandOptions}
+
+## counter increment at the end of the script
+{page pIncrementCounters if len(q_chosen_brands)>0}
+ 
+{
+for code in q_chosen_brands: counter_increment(counter_name, code)
+}
+ 
+{end page pIncrementCounters}`;
+        }
+        
+        // Generate Priority LF code
+        function generatePriorityLF(numBrands, brandData, priorityBrands, sourceQuestion) {
+            const { brands } = brandData;
+            const brandOptions = brands.map(b => `<${b.code}> ${b.name}`).join('\n ');
+            const priorityList = priorityBrands || '';
+            
+            return `{
+XX_counter_name = "XX_counter_" + str(gryphon.interview_type)
+ 
+XX_nr_max = ${numBrands}                  #number of needed brands
+XX_counter_vals = int[]
+XX_eligible  = int[]
+XX_selected = int[]
+XX_priority = int[]
+XX_flag = False
+XX_priority_brands = [${priorityList}]    #add priority codes here, blank if no priority
+XX_brands_selected = ${sourceQuestion || 'Q1'}.selected   #updated the question number here
+XX_priority = sets.iintersect(XX_brands_selected,XX_priority_brands) 
+if len(XX_priority) >= XX_nr_max:
+    XX_eligible = random_shuffle(XX_priority)
+else:
+    XX_flag = True
+    XX_nr_max = XX_nr_max - len(XX_priority)
+    XX_eligible = random_shuffle(sets.idiff(XX_brands_selected,XX_priority))
+if XX_nr_max > 0:
+    for x in XX_eligible : XX_counter_vals.append(counter_value(XX_counter_name,x))
+    
+    XX_selected = reorder(XX_eligible,bottom_n(XX_counter_vals,XX_nr_max))   
+if XX_flag: 
+    XX_selected = XX_selected + XX_priority
+    
+XX_chosen_brands.copy(XX_selected)
+}
+{page p_XX_chosen_brands localizable=False}
+[XX_chosen_brands if str(gryphon.interview_type) == "test"] {multiple required=NONE} <<span style="color:red">THIS IS SHOWN ONLY IN TEST MODE</span><br/>> Chosen brands:
+ ${brandOptions}
+{end page p_XX_chosen_brands}
+################ COUNTER INCREMENTS FOR LEASTFILL LOGICS ########################### 
+{page pIncrementCounters if len(XX_chosen_brands)>0}
+ 
+{
+for code in XX_chosen_brands: counter_increment(XX_counter_name, code)
+}
+ 
+{end page pIncrementCounters}`;
+        }
+        
+        // Form submit
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const lfType = document.querySelector('input[name="lfType"]:checked').value;
+            const numBrands = document.getElementById('numBrands').value;
+            const brandList = document.getElementById('brandList').value;
+            const counterReset = document.getElementById('counterReset').value;
+            const priorityBrands = document.getElementById('priorityBrands').value;
+            const sourceQuestion = document.getElementById('sourceQuestion').value;
+            
+            const brandData = parseBrandList(brandList);
+            
+            let generatedCode = '';
+            
+            if (lfType === 'normal') {
+                generatedCode = generateNormalLF(numBrands, brandData, counterReset);
+            } else {
+                generatedCode = generatePriorityLF(numBrands, brandData, priorityBrands, sourceQuestion);
+            }
+            
+            outputCode.textContent = generatedCode;
+            outputSection.classList.add('active');
+            outputSection.scrollIntoView({ behavior: 'smooth' });
+        });
+        
+        // Copy to clipboard
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(outputCode.textContent);
+                copyText.textContent = 'Copied!';
+                copyIcon.textContent = '✓';
+                copyBtn.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyText.textContent = 'Copy Code';
+                    copyIcon.textContent = '📋';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                alert('Failed to copy code. Please select and copy manually.');
+            }
+        });
+        
+        // Reset form
+        form.addEventListener('reset', () => {
+            outputSection.classList.remove('active');
+            prioritySection.classList.remove('active');
+        });
+    </script>
+</body>
+</html>
